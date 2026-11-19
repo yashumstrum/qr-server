@@ -1,0 +1,22 @@
+{
+  "name": "qr-code-express-server",
+  "version": "1.0.0",
+  "description": "Express server using @yashumstrum/qr-code to generate QR codes in PNG, SVG, Data URL, and Text formats",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "express",
+    "qr-code",
+    "qrcode",
+    "generator"
+  ],
+  "license": "ISC",
+  "dependencies": {
+    "@yashumstrum/qr-code": "^1.0.0",
+    "express": "^4.21.2"
+  }
+}

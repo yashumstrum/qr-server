@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Code Generator</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --error: #dc2626;
+      --radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      width: 100%;
+      max-width: 460px;
+      padding: 2rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      text-align: center;
+    }
+
+    p.subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 1.75rem;
+      text-align: center;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    input[type="url"], input[type="text"] {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    input:focus-visible {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    /* Modern constraint styling avoiding premature red borders */
+    input:user-invalid {
+      border-color: var(--error);
+    }
+
+    button {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #ffffff;
+      background: var(--primary);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    button:hover {
+      background: var(--primary-hover);
+    }
+
+    button:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    .error-box {
+      display: none;
+      background: #fef2f2;
+      color: var(--error);
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      font-size: 0.9rem;
+      margin-top: 1.25rem;
+    }
+
+    .result-section {
+      display: none;
+      margin-top: 1.75rem;
+      text-align: center;
+      border-top: 1px solid var(--border);
+      padding-top: 1.5rem;
+    }
+
+    .result-section img {
+      width: 220px;
+      height: 220px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #ffffff;
+      padding: 8px;
+      display: block;
+      margin: 0 auto 1rem;
+    }
+
+    .download-link {
+      display: inline-block;
+      text-decoration: none;
+      color: var(--primary);
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      transition: background 0.15s ease;
+    }
+
+    .download-link:hover {
+      background: #f1f5f9;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>QR Code Generator</h1>
+    <p class="subtitle">Enter any link to generate an instant QR code</p>
+
+    <form id="qr-form" action="/qr" method="GET">
+      <div class="form-group">
+        <label for="url">URL to convert <span aria-hidden="true">*</span></label>
+        <input
+          type="text"
+          id="url"
+          name="url"
+          placeholder="https://example.com"
+          required
+          autocomplete="url"
+          autocorrect="off"
+          autocapitalize="none"
+          spellcheck="false"
+          enterkeyhint="go"
+        >
+      </div>
+
+      <button type="submit" id="submit-btn">Generate QR Code</button>
+    </form>
+
+    <div id="error-message" class="error-box" role="alert" aria-live="polite"></div>
+
+    <section id="result" class="result-section" aria-live="polite">
+      <img id="qr-image" src="" alt="Generated QR code">
+      <div>
+        <a id="download-btn" class="download-link" href="#" download="qrcode.png">Download PNG</a>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById('qr-form');
+    const urlInput = document.getElementById('url');
+    const resultSection = document.getElementById('result');
+    const qrImage = document.getElementById('qr-image');
+    const downloadBtn = document.getElementById('download-btn');
+    const errorMessage = document.getElementById('error-message');
+    const submitBtn = document.getElementById('submit-btn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const rawUrl = urlInput.value.trim();
+      if (!rawUrl) return;
+
+      errorMessage.style.display = 'none';
+      resultSection.style.display = 'none';
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Generating...';
+
+      try {
+        const qrEndpoint = `/qr?url=${encodeURIComponent(rawUrl)}`;
+        const response = await fetch(qrEndpoint);
+
+        if (!response.ok) {
+          const errText = await response.text();
+          throw new Error(errText || 'Failed to generate QR code');
+        }
+
+        const blob = await response.blob();
+        const objectUrl = URL.createObjectURL(blob);
+
+        qrImage.src = objectUrl;
+        downloadBtn.href = objectUrl;
+        resultSection.style.display = 'block';
+      } catch (err) {
+        errorMessage.textContent = err.message;
+        errorMessage.style.display = 'block';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Generate QR Code';
+      }
+    });
+  </script>
+</body>
+</html>
